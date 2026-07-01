@@ -5,8 +5,8 @@ REGRAS_FCK = {
     "Viga Baldrame": {"fck": 20, "cimento_por_m3": 7.0, "areia_por_m3": 0.66, "brita_por_m3": 0.60, "tipo_brita": "Brita 1"},
     "Laje": {"fck": 25, "cimento_por_m3": 8.0, "areia_por_m3": 0.57, "brita_por_m3": 0.59, "tipo_brita": "Brita 0"},
     "Pilar": {"fck": 25, "cimento_por_m3": 8.5, "areia_por_m3": 0.55, "brita_por_m3": 0.58, "tipo_brita": "Brita 1"},
-    "Fundação - Estaca": {"fck": 25, "cimento_por_m3": 8.0, "areia_por_m3": 0.57, "brita_por_m3": 0.59, "tipo_brita": "Brita 1"},
-    "Fundação - Radie": {"fck": 30, "cimento_por_m3": 9.0, "areia_por_m3": 0.48, "brita_por_m3": 0.55, "tipo_brita": "Brita 1"},
+    "Estaca": {"fck": 25, "cimento_por_m3": 8.0, "areia_por_m3": 0.57, "brita_por_m3": 0.59, "tipo_brita": "Brita 1"},
+    "Radie": {"fck": 30, "cimento_por_m3": 9.0, "areia_por_m3": 0.48, "brita_por_m3": 0.55, "tipo_brita": "Brita 1"},
 }
 
 # Regras de recomendação de aço por tipo de elemento
@@ -14,8 +14,8 @@ REGRAS_ACO = {
     "Viga Baldrame": {"aco": "CA-50", "bitola_min": "8 mm", "bitola_max": "12.5 mm"},
     "Laje": {"aco": "CA-25", "bitola_min": "6 mm", "bitola_max": "10 mm"},
     "Pilar": {"aco": "CA-50", "bitola_min": "10 mm", "bitola_max": "20 mm"},
-    "Fundação - Estaca": {"aco": "CA-50", "bitola_min": "12 mm", "bitola_max": "20 mm"},
-    "Fundação - Radie": {"aco": "CA-50", "bitola_min": "12 mm", "bitola_max": "20 mm"},
+    "Estaca": {"aco": "CA-50", "bitola_min": "12 mm", "bitola_max": "20 mm"},
+    "Radie": {"aco": "CA-50", "bitola_min": "12 mm", "bitola_max": "20 mm"},
 }
 
 # Regras de consumo para Alvenaria e Fechamento (valores aproximados por m²)

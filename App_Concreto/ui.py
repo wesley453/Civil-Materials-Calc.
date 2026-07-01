@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 import requests
 import pandas as pd
+import os
 from fpdf import FPDF
 from calculos import (
     calcular_volume,
@@ -42,13 +43,13 @@ def mostrar_historico():
         )
 
         # Exportar Excel
-        if st.button("📊 Exportar para Excel"):
+        if st.button("📊 Exportar para Excel", key="export_excel"):
             excel_file = "relatorio_calculos.xlsx"
             df.to_excel(excel_file, index=False)
             st.success(f"Relatório gerado: {excel_file}")
 
         # Exportar PDF
-        if st.button("📄 Exportar para PDF"):
+        if st.button("📄 Exportar para PDF", key="export_pdf"):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", size=12)
@@ -80,13 +81,26 @@ def calcular_custos(resultado):
     custo_total = 0
     detalhes = {}
 
+    # Cimento em sacos
     if "cimento" in resultado:
         custo = resultado["cimento"] * PRECOS_MATERIAIS["cimento"]
         detalhes["Cimento"] = custo
         custo_total += custo
 
+    # Cimento em kg (para alvenaria)
+    if "cimento_kg" in resultado:
+        sacos = resultado["cimento_kg"] / 50  # converte kg para sacos
+        custo = sacos * PRECOS_MATERIAIS["cimento"]
+        detalhes["Cimento"] = custo
+        custo_total += custo
+
     if "areia" in resultado:
         custo = resultado["areia"] * PRECOS_MATERIAIS["areia"]
+        detalhes["Areia"] = custo
+        custo_total += custo
+
+    if "areia_m3" in resultado:
+        custo = resultado["areia_m3"] * PRECOS_MATERIAIS["areia"]
         detalhes["Areia"] = custo
         custo_total += custo
 
@@ -130,7 +144,7 @@ def main():
         if tipo == "Estaca":
             diametro_str = st.text_input("Diâmetro (m)", "0.00")
             profundidade_str = st.text_input("Profundidade (m)", "0.00")
-            if st.button("Calcular Estaca"):
+            if st.button("Calcular Estaca", key="calcular_estaca"):
                 try:
                     diametro = float(diametro_str)
                     profundidade = float(profundidade_str)
@@ -139,6 +153,7 @@ def main():
                     materiais = calcular_materiais("Fundação - Estaca", vol_estaca)
                     recomendacao = recomendar_aco("Fundação - Estaca", vol_estaca)
                     salvar_historico("Fundação - Estaca", materiais)
+
                     st.success(f"""
                         📐 Volume total: {materiais['volume_total']} m³  
                         🏗️ Fck: {materiais['fck']} MPa  
@@ -149,6 +164,7 @@ def main():
                         🔩 Aço recomendado: {recomendacao['aco']}  
                         📏 Bitola sugerida: {recomendacao['bitola']}
                     """)
+
                     custos = calcular_custos(materiais)
                     st.write("💰 Custos estimados:")
                     for material, valor in custos["detalhes"].items():
@@ -160,7 +176,7 @@ def main():
             largura_str = st.text_input("Largura (m)", "0.00")
             altura_str = st.text_input("Altura (m)", "0.00")
             comprimento_str = st.text_input("Comprimento (m)", "0.00")
-            if st.button("Calcular"):
+            if st.button("Calcular", key="calcular_estrutura"):
                 try:
                     largura = float(largura_str)
                     altura = float(altura_str)
@@ -170,6 +186,7 @@ def main():
                     materiais = calcular_materiais(tipo, vol)
                     recomendacao = recomendar_aco(tipo, vol)
                     salvar_historico(tipo, materiais)
+
                     st.success(f"""
                         📐 Volume total: {materiais['volume_total']} m³  
                         🏗️ Fck: {materiais['fck']} MPa  
@@ -180,6 +197,7 @@ def main():
                         🔩 Aço recomendado: {recomendacao['aco']}  
                         📏 Bitola sugerida: {recomendacao['bitola']}
                     """)
+
                     custos = calcular_custos(materiais)
                     st.write("💰 Custos estimados:")
                     for material, valor in custos["detalhes"].items():
@@ -187,21 +205,26 @@ def main():
                     st.success(f"💵 Custo total estimado: R$ {custos['custo_total']:.2f}")
                 except Exception as ex:
                     st.error(f"Erro: {ex}")
-
-    # Aba 2: Alvenaria e Fechamento
+                    
+                        # Aba 2: Alvenaria e Fechamento
     with aba[1]:
         st.subheader("Selecione o elemento de alvenaria ou fechamento")
         tipo_alv = st.selectbox("Elemento", list(REGRAS_ALVENARIA.keys()))
         area_str = st.text_input("Área (m²)", "0.00")
 
-        if st.button("Calcular Alvenaria"):
+        if tipo_alv == "Chapisco":
+            botao = st.button("Calcular", key="calcular_chapisco")
+        else:
+            botao = st.button("Calcular Alvenaria", key="calcular_alvenaria")
+
+        if botao:
             try:
                 area = float(area_str)
                 if area <= 0:
                     raise ValueError("A área deve ser maior que zero.")
                 resultado = calcular_alvenaria(tipo_alv, area)
                 salvar_historico(tipo_alv, resultado)
-                
+
                 if tipo_alv == "Tijolo (Bloco)":
                     st.success(f"""
                         🧱 Tipo: {resultado['tipo']}  
@@ -216,6 +239,8 @@ def main():
                         🏗️ Cimento: {resultado['cimento_kg']} kg  
                         🏖️ Areia: {resultado['areia_m3']} m³
                     """)
+
+                # Sempre exibir custos
                 custos = calcular_custos(resultado)
                 st.write("💰 Custos estimados:")
                 for material, valor in custos["detalhes"].items():
@@ -253,17 +278,20 @@ def main():
         st.write(f"⏰ Hora: {agora.strftime('%H:%M:%S')}")
 
         try:
-            api_key = "SUA_CHAVE_OPENWEATHER"
+            api_key = os.getenv("OPENWEATHER_KEY")
             cidade = "Brasilia,BR"
-            url = f"http://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={api_key}&units=metric&lang=pt_br"
-            resposta = requests.get(url).json()
-            if resposta.get("main"):
-                temperatura = resposta["main"]["temp"]
-                umidade = resposta["main"]["humidity"]
-                st.write(f"🌡️ Temperatura do ar: {temperatura} °C")
-                st.write(f"💧 Umidade do ar: {umidade}%")
+            if api_key:
+                url = f"http://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={api_key}&units=metric&lang=pt_br"
+                resposta = requests.get(url).json()
+                if resposta.get("main"):
+                    temperatura = resposta["main"]["temp"]
+                    umidade = resposta["main"]["humidity"]
+                    st.write(f"🌡️ Temperatura do ar: {temperatura} °C")
+                    st.write(f"💧 Umidade do ar: {umidade}%")
+                else:
+                    st.warning("Não foi possível obter os dados climáticos.")
             else:
-                st.warning("Não foi possível obter os dados climáticos.")
+                st.error("Chave da API não configurada. Defina OPENWEATHER_KEY nas variáveis de ambiente.")
         except Exception as e:
             st.error(f"Erro ao acessar a API de clima: {e}")
 
